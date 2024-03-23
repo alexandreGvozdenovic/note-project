@@ -4,6 +4,10 @@ import { NewNote } from "./NewNote";
 import { useLocalStorage } from "./useLocalStorage";
 import { useMemo } from "react";
 import { v4 as uuidv4 } from "uuid";
+import NoteList from "./NoteList";
+import { NoteLayout } from "./NoteLayout";
+import { Note } from "./Note";
+import { EditNote } from "./EditNote";
 
 export type Note = {
   id: string;
@@ -48,13 +52,55 @@ function App() {
     });
   }
 
+  function onUpdateNote(id: string, { tags, ...data }: NoteData) {
+    setNotes((prevNotes) => {
+      return prevNotes.map((note) => {
+        if (note.id === id) {
+          return { ...note, ...data, tagIds: tags.map((tag) => tag.id) };
+        } else {
+          return note;
+        }
+      });
+    });
+  }
+
+  function onDeleteNote(id: string) {
+    setNotes((prevNotes) => {
+      return prevNotes.filter((note) => note.id !== id);
+    });
+  }
   function addTag(tag: Tag) {
     setTags((prev) => [...prev, tag]);
+  }
+
+  function updateTag(id: string, label: string) {
+    setTags((prev) =>
+      prev.map((tag) => {
+        if (tag.id === id) {
+          return { ...tag, label };
+        } else {
+          return tag;
+        }
+      })
+    );
+  }
+  function deleteTag(id: string) {
+    setTags((prev) => prev.filter((tag) => tag.id !== id));
   }
   return (
     <Container className="my-4">
       <Routes>
-        <Route path="/" element={<h1>Home</h1>}></Route>
+        <Route
+          path="/"
+          element={
+            <NoteList
+              availableTags={tags}
+              notes={notesWithTags}
+              onUpdateTag={updateTag}
+              onDeleteTag={deleteTag}
+            />
+          }
+        ></Route>
         <Route
           path="/new"
           element={
@@ -65,9 +111,18 @@ function App() {
             />
           }
         ></Route>
-        <Route path="/:id">
-          <Route index element={<h1>show</h1>}></Route>
-          <Route path="edit" element={<h1>edit</h1>}></Route>
+        <Route path="/:id" element={<NoteLayout notes={notesWithTags} />}>
+          <Route index element={<Note onDelete={onDeleteNote} />}></Route>
+          <Route
+            path="edit"
+            element={
+              <EditNote
+                onSubmit={onUpdateNote}
+                onAddTag={addTag}
+                availableTags={tags}
+              />
+            }
+          ></Route>
         </Route>
         <Route path="*" element={<Navigate to="/" />}></Route>
       </Routes>
